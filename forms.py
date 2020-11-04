@@ -23,7 +23,7 @@ class VenueForm(Form):
     city = StringField(
         'city', validators=[DataRequired()]
     )
-    state = SelectField(
+    state_ = SelectField(
         'state', validators=[DataRequired()],
         choices=[
             ('AL', 'AL'),
@@ -124,7 +124,7 @@ class ArtistForm(Form):
     city = StringField(
         'city', validators=[DataRequired()]
     )
-    state = SelectField(
+    state_ = SelectField(
         'state', validators=[DataRequired()],
         choices=[
             ('AL', 'AL'),
