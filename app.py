@@ -76,6 +76,8 @@ class Show(db.Model):
                          db.ForeignKey('Venue.id'),
                          primary_key=True,
                          nullable=False)
+    start_time = db.Column(db.DateTime,
+                           nullable=False)
 
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
