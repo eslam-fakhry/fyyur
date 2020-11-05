@@ -53,6 +53,7 @@ class Venue(db.Model):
         'Artist', secondary='shows',
         backref='venues',
         lazy=True)
+    shows = db.relationship('Show', backref="venue", lazy=True)
 
 
 class Artist(db.Model):
@@ -69,6 +70,8 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.Text())
+
+    shows = db.relationship('Show', backref="artist", lazy=True)
 
 
 class Show(db.Model):
