@@ -1,7 +1,8 @@
 from datetime import datetime
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField 
 from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms.widgets.core import CheckboxInput, TextArea
 
 
 class ShowForm(Form):
@@ -218,6 +219,18 @@ class ArtistForm(Form):
     facebook_link = StringField(
         # TODO implement enum restriction
         'facebook_link', validators=[URL()]
+    )
+    website = StringField(
+        'website', validators=[URL()]
+    )
+    image_link = StringField(
+        'image_link', validators=[URL()]
+    )
+    seeking_venue = StringField(
+        'seeking_venue', widget=CheckboxInput()
+    )
+    seeking_description = StringField(
+        'seeking_description', widget=TextArea()
     )
 
 # TODO IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM

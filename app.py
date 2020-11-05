@@ -3,6 +3,7 @@
 #----------------------------------------------------------------------------#
 
 import json
+import sys
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
@@ -32,7 +33,7 @@ toolbar = DebugToolbarExtension(app)
 
 
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'venues'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
@@ -44,18 +45,18 @@ class Venue(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String(120))
-    seeking_talent = db.Column(db.Boolean())
+    seeking_talent = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.Text())
 
     # Add many-to-many relationship with Artist through Show model
     artists = db.relationship(
-        'Artist', secondary='Show',
+        'Artist', secondary='shows',
         backref='venues',
         lazy=True)
 
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'artists'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
@@ -66,26 +67,24 @@ class Artist(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website = db.Column(db.String(120))
-    seeking_talent = db.Column(db.Boolean())
+    seeking_venue = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.Text())
 
 
 class Show(db.Model):
-    __tablename__ = 'Show'
+    __tablename__ = 'shows'
 
     artist_id = db.Column(db.Integer,
-                          db.ForeignKey('Artist.id'),
+                          db.ForeignKey('artists.id'),
                           primary_key=True,
                           nullable=False)
     venue_id = db.Column(db.Integer,
-                         db.ForeignKey('Venue.id'),
+                         db.ForeignKey('venues.id'),
                          primary_key=True,
                          nullable=False)
     start_time = db.Column(db.DateTime,
                            nullable=False)
 
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -463,14 +462,57 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
     # called upon submitting the new artist listing form
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
+    form = ArtistForm(request.form)
+    error = False
+    if form.validate():
+        artist = create_artist_from_request(request)
+        artist_id = None
+        print('here1')
+        try:
+            db.session.add(artist)
+            print('here')
+            db.session.commit()
+            artist_id = artist.id
+        except Exception:
+            db.session.rollback()
+            print(sys.exc_info())
+            error = True
+        finally:
+            db.session.close()
+        if error:
+            flash("Oops!, Something went wrong!")
+            return render_template('forms/new_artist.html', form=form)
+        else:
+            flash('Artist ' + request.form['name'] +
+                  ' was successfully listed!')
+            return redirect(url_for('show_artist', artist_id=artist_id))
 
-    # on successful db insert, flash success
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-    return render_template('pages/home.html')
+    for p, v in vars(form).items():
+        if hasattr(v, 'errors'):
+            print(p, v.errors)
+    if form.csrf_token.errors:
+        flash("Your session is expired. please try again")
+
+    flash("Oops!, input data not valid. please check your input!")
+    return render_template('forms/new_artist.html', form=form)
+
+
+def create_artist_from_request(request):
+    form = request.form
+    seeking_venue_str = request.form.get('seeking_venue', '')
+    seeking_venue = len(seeking_venue_str) > 0
+
+    return Artist(name=request.form['name'],
+                  city=request.form['city'],
+                  state=request.form['state'],
+                  phone=request.form['phone'],
+                  genres=",".join(request.form.getlist('genres')),
+                  facebook_link=request.form['facebook_link'],
+                  image_link=request.form['image_link'],
+                  website=request.form['website'],
+                  seeking_venue=seeking_venue,
+                  seeking_description=request.form['seeking_description'],
+                  )
 
 
 #  Shows
