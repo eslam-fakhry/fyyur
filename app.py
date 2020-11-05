@@ -255,15 +255,54 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
+    form = VenueForm(request.form)
+    error = False
+    if form.validate():
+        venue = create_venue_from_request(request)
+        venue_id = None
+        print('here1')
+        try:
+            db.session.add(venue)
+            print('here')
+            db.session.commit()
+            venue_id = venue.id
+        except Exception:
+            db.session.rollback()
+            print(sys.exc_info())
+            error = True
+        finally:
+            db.session.close()
+        if error:
+            flash("Oops!, Something went wrong!")
+            return render_template('forms/new_venue.html', form=form)
+        else:
+            flash('Venue ' + request.form['name'] +
+                  ' was successfully listed!')
+            return redirect(url_for('show_venue', venue_id=venue_id))
 
-    # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template('pages/home.html')
+    if form.csrf_token.errors:
+        flash("Your session is expired. please try again")
+
+    flash("Oops!, input data not valid. please check your input!")
+    return render_template('forms/new_venue.html', form=form)
+
+
+def create_venue_from_request(request):
+    form = request.form
+    seeking_talent_str = form.get('seeking_talent', '')
+    seeking_talent = len(seeking_talent_str) > 0
+
+    return Venue(name=form['name'],
+                  city=form['city'],
+                  state=form['state'],
+                  phone=form['phone'],
+                  genres=",".join(form.getlist('genres')),
+                  facebook_link=form['facebook_link'],
+                  image_link=form['image_link'],
+                  website=form['website'],
+                  seeking_talent=seeking_talent,
+                  seeking_description=form['seeking_description'],
+                  )
 
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -487,9 +526,6 @@ def create_artist_submission():
                   ' was successfully listed!')
             return redirect(url_for('show_artist', artist_id=artist_id))
 
-    for p, v in vars(form).items():
-        if hasattr(v, 'errors'):
-            print(p, v.errors)
     if form.csrf_token.errors:
         flash("Your session is expired. please try again")
 
@@ -499,19 +535,19 @@ def create_artist_submission():
 
 def create_artist_from_request(request):
     form = request.form
-    seeking_venue_str = request.form.get('seeking_venue', '')
+    seeking_venue_str = form.get('seeking_venue', '')
     seeking_venue = len(seeking_venue_str) > 0
 
-    return Artist(name=request.form['name'],
-                  city=request.form['city'],
-                  state=request.form['state'],
-                  phone=request.form['phone'],
-                  genres=",".join(request.form.getlist('genres')),
-                  facebook_link=request.form['facebook_link'],
-                  image_link=request.form['image_link'],
-                  website=request.form['website'],
+    return Artist(name=form['name'],
+                  city=form['city'],
+                  state=form['state'],
+                  phone=form['phone'],
+                  genres=",".join(form.getlist('genres')),
+                  facebook_link=form['facebook_link'],
+                  image_link=form['image_link'],
+                  website=form['website'],
                   seeking_venue=seeking_venue,
-                  seeking_description=request.form['seeking_description'],
+                  seeking_description=form['seeking_description'],
                   )
 
 
