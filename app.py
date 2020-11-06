@@ -6,6 +6,7 @@ from collections import defaultdict
 from functools import reduce
 import json
 import sys
+
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
@@ -331,7 +332,7 @@ def delete_venue(venue_id):
 
 @app.route('/artists')
 def artists():
-    artists = Artist.query.options(Load(Artist).load_only('id','name')).all()
+    artists = Artist.query.options(Load(Artist).load_only('id', 'name')).all()
     data = list(map(lambda x: {"id": x.id, "name": x.name}, artists))
     return render_template('pages/artists.html', artists=data)
 
@@ -437,21 +438,17 @@ def show_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-    form = ArtistForm()
+    artist_obj = Artist.query.get_or_404(artist_id)
+
     artist = {
-        "id": 4,
-        "name": "Guns N Petals",
-        "genres": ["Rock n Roll"],
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "326-123-5000",
-        "website": "https://www.gunsnpetalsband.com",
-        "facebook_link": "https://www.facebook.com/GunsNPetals",
-        "seeking_venue": True,
-        "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-        "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
+        "id": artist_obj.id,
+        "name": artist_obj.name,
     }
-    # TODO: populate form with fields from artist with ID <artist_id>
+
+    # populate form with ArtistForm
+    form = ArtistForm(obj=artist_obj)
+    form.genres.data = artist_obj.genres.split(',')
+
     return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 
@@ -465,22 +462,17 @@ def edit_artist_submission(artist_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-    form = VenueForm()
+    venue_obj = Venue.query.get_or_404(venue_id)
+
     venue = {
-        "id": 1,
-        "name": "The Musical Hop",
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-        "address": "1015 Folsom Street",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "123-123-1234",
-        "website": "https://www.themusicalhop.com",
-        "facebook_link": "https://www.facebook.com/TheMusicalHop",
-        "seeking_talent": True,
-        "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-        "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
+        "id": venue_obj.id,
+        "name": venue_obj.name,
     }
-    # TODO: populate form with values from venue with ID <venue_id>
+
+    # populate form with VenueForm
+    form = VenueForm(obj)
+    form.genres.data = venue_obj.genres.split(',')
+
     return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 
