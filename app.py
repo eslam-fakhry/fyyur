@@ -613,15 +613,46 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-    # called to create new shows in the db, upon submitting new show listing form
-    # TODO: insert form data as a new Show record in the db, instead
+    form = ShowForm(request.form)
+    error = False
 
-    # on successful db insert, flash success
+    if(not form.validate()):
+        flash("Oops!, input data not valid. please check your input!")
+        return render_template('forms/new_show.html', form=form)
+
+    # check if artist exists
+    artist = Artist.query.get(request.form.get('artist_id'))
+    if artist is None:
+        flash("Artist ID: {} is not associated with any artist".format(
+            request.form['artist_id']))
+        return render_template('forms/new_show.html', form=form)
+
+    # check if venue exists
+    venue = Venue.query.get(request.form.get('venue_id'))
+    if venue is None:
+        flash("Venue ID: {} is not associated with any venue".format(
+            request.form['venue_id']))
+        return render_template('forms/new_show.html', form=form)
+
+    show = Show(artist_id=request.form.get('artist_id'),
+                venue_id=request.form.get('venue_id'),
+                start_time=request.form.get('start_time'))
+    try:
+        db.session.add(show)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+    finally:
+        db.session.close()
+
+    if error:
+        flash("An error occurred. Show could not be listed.")
+        return render_template('forms/new_show.html', form=form)
+
     flash('Show was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Show could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template('pages/home.html')
+    return redirect(url_for('shows'))
 
 
 @app.errorhandler(404)
