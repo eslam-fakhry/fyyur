@@ -158,20 +158,29 @@ def venues():
     return render_template('pages/venues.html', areas=data)
 
 
-@app.route('/venues/search', methods=['POST'])
+# Make it accept Get request for better UX
+@app.route('/venues/search', methods=['GET'])
 def search_venues():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # search for Hop should return "The Musical Hop".
-    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
+    search_term = request.args.get('search_term', '')
+    result = db.session.query(Venue.id, Venue.name, func.count(Show.start_time)) \
+        .outerjoin(Show,
+                   and_(Venue.id == Show.venue_id, Show.start_time > datetime.now().date())) \
+        .filter(Venue.name.ilike("%{}%".format(search_term))) \
+        .group_by(Venue.id).all()
+
+    def mapper(result_item):
+        id, name, num_upcoming_shows = result_item
+        return {
+            "id": id,
+            "name": name,
+            "num_upcoming_shows": num_upcoming_shows,
+        }
+
     response = {
-        "count": 1,
-        "data": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
+        "count": len(result),
+        "data": list(map(mapper, result))
     }
-    return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+    return render_template('pages/search_venues.html', results=response, search_term=search_term)
 
 
 @app.route('/venues/<int:venue_id>')
@@ -318,20 +327,29 @@ def artists():
     return render_template('pages/artists.html', artists=data)
 
 
-@app.route('/artists/search', methods=['POST'])
+# Make it accept Get request for better UX
+@app.route('/artists/search', methods=['GET'])
 def search_artists():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # search for "A" should return "Guns N Petals", "Matt Quevedo", and "The Wild Sax Band".
-    # search for "band" should return "The Wild Sax Band".
+    search_term = request.args.get('search_term', '')
+    result = db.session.query(Artist.id, Artist.name, func.count(Show.start_time)) \
+        .outerjoin(Show,
+                   and_(Artist.id == Show.artist_id, Show.start_time > datetime.now().date())) \
+        .filter(Artist.name.ilike("%{}%".format(search_term))) \
+        .group_by(Artist.id).all()
+
+    def mapper(result_item):
+        id, name, num_upcoming_shows = result_item
+        return {
+            "id": id,
+            "name": name,
+            "num_upcoming_shows": num_upcoming_shows,
+        }
+
     response = {
-        "count": 1,
-        "data": [{
-            "id": 4,
-            "name": "Guns N Petals",
-            "num_upcoming_shows": 0,
-        }]
+        "count": len(result),
+        "data": list(map(mapper, result))
     }
-    return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+    return render_template('pages/search_artists.html', results=response, search_term=search_term)
 
 
 @app.route('/artists/<int:artist_id>')
