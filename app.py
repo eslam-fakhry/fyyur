@@ -7,6 +7,7 @@ from functools import reduce
 from itertools import filterfalse
 import json
 import sys
+from sqlalchemy.exc import IntegrityError
 from utils import is_past_show
 
 import dateutil.parser
@@ -50,7 +51,7 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120), nullable=False)
     image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    facebook_link = db.Column(db.String(120), unique=True)
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.Text())
@@ -73,7 +74,7 @@ class Artist(db.Model):
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120), nullable=False)
     image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    facebook_link = db.Column(db.String(120), unique=True)
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.Text())
@@ -237,32 +238,37 @@ def create_venue_form():
 def create_venue_submission():
     form = VenueForm(request.form)
     error = False
-    if form.validate():
-        venue = create_venue_from_request(request)
-        venue_id = None
-        try:
-            db.session.add(venue)
-            db.session.commit()
-            venue_id = venue.id
-        except Exception:
-            db.session.rollback()
-            print(sys.exc_info())
-            error = True
-        finally:
-            db.session.close()
-        if error:
-            flash("Oops!, Something went wrong!")
-            return render_template('forms/new_venue.html', form=form)
-        else:
-            flash('Venue ' + request.form['name'] +
-                  ' was successfully listed!')
-            return redirect(url_for('show_venue', venue_id=venue_id))
+    if not form.validate():
+        if form.csrf_token.errors:
+            flash("Your session is expired. please try again")
 
-    if form.csrf_token.errors:
-        flash("Your session is expired. please try again")
+        flash("Oops!, input data not valid. please check your input!")
+        return render_template('forms/new_venue.html', form=form)
 
-    flash("Oops!, input data not valid. please check your input!")
-    return render_template('forms/new_venue.html', form=form)
+    venue = create_venue_from_request(request)
+    venue_id = None
+    try:
+        db.session.add(venue)
+        db.session.commit()
+        venue_id = venue.id
+    except IntegrityError:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, looks like another venue uses this facebook link!")
+    except Exception:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, Something went wrong!")
+    finally:
+        db.session.close()
+    if error:
+        return render_template('forms/new_venue.html', form=form)
+    else:
+        flash('Venue ' + request.form['name'] +
+              ' was successfully listed!')
+        return redirect(url_for('show_venue', venue_id=venue_id))
 
 
 def create_venue_from_request(request):
@@ -417,31 +423,37 @@ def edit_artist_submission(artist_id):
 
     form = ArtistForm(request.form)
     error = False
-    if form.validate():
-        artist_id = None
-        artist = populate_artist_from_request(old_artist, request)
-        try:
-            db.session.commit()
-            artist_id = artist.id
-        except Exception:
-            db.session.rollback()
-            print(sys.exc_info())
-            error = True
-        finally:
-            db.session.close()
-        if error:
-            flash("Oops!, Something went wrong!")
-            return render_template('forms/edit_artist.html', form=form)
-        else:
-            flash('Artist ' + request.form['name'] +
-                  ' was successfully updated!')
-            return redirect(url_for('show_artist', artist_id=artist_id))
+    if not form.validate():
+        if form.csrf_token.errors:
+            flash("Your session is expired. please try again")
 
-    if form.csrf_token.errors:
-        flash("Your session is expired. please try again")
+        flash("Oops!, input data not valid. please check your input!")
+        return render_template('forms/edit_artist.html', form=form)
 
-    flash("Oops!, input data not valid. please check your input!")
-    return render_template('forms/edit_artist.html', form=form)
+    artist_id = None
+    artist = populate_artist_from_request(old_artist, request)
+    try:
+        db.session.commit()
+        artist_id = artist.id
+    except IntegrityError:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, looks like another venue uses this facebook link!")
+    except Exception:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, Something went wrong!")
+    finally:
+        db.session.close()
+    if error:
+        return render_template('forms/edit_artist.html', form=form)
+    else:
+        flash('Artist ' + request.form['name'] +
+                ' was successfully updated!')
+        return redirect(url_for('show_artist', artist_id=artist_id))
+
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
@@ -465,31 +477,37 @@ def edit_venue_submission(venue_id):
     old_venue = Venue.query.get_or_404(venue_id)
     form = VenueForm(request.form)
     error = False
-    if form.validate():
-        venue = populate_venue_from_request(old_venue, request)
-        venue_id = None
-        try:
-            db.session.commit()
-            venue_id = venue.id
-        except Exception:
-            db.session.rollback()
-            print(sys.exc_info())
-            error = True
-        finally:
-            db.session.close()
-        if error:
-            flash("Oops!, Something went wrong!")
-            return render_template('forms/edit_venue.html', form=form)
-        else:
-            flash('Venue ' + request.form['name'] +
-                  ' was successfully updated!')
-            return redirect(url_for('show_venue', venue_id=venue_id))
+    if not form.validate():
+        if form.csrf_token.errors:
+            flash("Your session is expired. please try again")
 
-    if form.csrf_token.errors:
-        flash("Your session is expired. please try again")
+        flash("Oops!, input data not valid. please check your input!")
+        return render_template('forms/edit_venue.html', form=form)
 
-    flash("Oops!, input data not valid. please check your input!")
-    return render_template('forms/edit_venue.html', form=form)
+    venue = populate_venue_from_request(old_venue, request)
+    venue_id = None
+    try:
+        db.session.commit()
+        venue_id = venue.id
+    except IntegrityError:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, looks like another venue uses this facebook link!")
+    except Exception:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, Something went wrong!")
+    finally:
+        db.session.close()
+    if error:
+        return render_template('forms/edit_venue.html', form=form)
+    else:
+        flash('Venue ' + request.form['name'] +
+                ' was successfully updated!')
+        return redirect(url_for('show_venue', venue_id=venue_id))
+
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -506,32 +524,37 @@ def create_artist_submission():
     # called upon submitting the new artist listing form
     form = ArtistForm(request.form)
     error = False
-    if form.validate():
-        artist = create_artist_from_request(request)
-        artist_id = None
-        try:
-            db.session.add(artist)
-            db.session.commit()
-            artist_id = artist.id
-        except Exception:
-            db.session.rollback()
-            print(sys.exc_info())
-            error = True
-        finally:
-            db.session.close()
-        if error:
-            flash("Oops!, Something went wrong!")
-            return render_template('forms/new_artist.html', form=form)
-        else:
-            flash('Artist ' + request.form['name'] +
-                  ' was successfully listed!')
-            return redirect(url_for('show_artist', artist_id=artist_id))
+    if not form.validate():
+        if form.csrf_token.errors:
+            flash("Your session is expired. please try again")
 
-    if form.csrf_token.errors:
-        flash("Your session is expired. please try again")
+        flash("Oops!, input data not valid. please check your input!")
+        return render_template('forms/new_artist.html', form=form)
 
-    flash("Oops!, input data not valid. please check your input!")
-    return render_template('forms/new_artist.html', form=form)
+    artist = create_artist_from_request(request)
+    artist_id = None
+    try:
+        db.session.add(artist)
+        db.session.commit()
+        artist_id = artist.id
+    except IntegrityError:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, looks like another artist uses this facebook link!")
+    except Exception:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+        flash("Oops!, Something went wrong!")
+    finally:
+        db.session.close()
+    if error:
+        return render_template('forms/new_artist.html', form=form)
+    else:
+        flash('Artist ' + request.form['name'] +
+              ' was successfully listed!')
+        return redirect(url_for('show_artist', artist_id=artist_id))
 
 
 def create_artist_from_request(request):
