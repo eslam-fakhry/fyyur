@@ -2,13 +2,17 @@
 # Imports
 #----------------------------------------------------------------------------#
 
+from collections import defaultdict
+from functools import reduce
 import json
 import sys
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
+from sqlalchemy.orm import  Load
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_, func
 from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
 import logging
@@ -117,31 +121,37 @@ def index():
 #  Venues
 #  ----------------------------------------------------------------
 
+def group_by_city_state(data):
+    def reducer(acc, item):
+        venue, show_count = item
+        acc[(venue.state, venue.city)]['city'] = venue.city
+        acc[(venue.state, venue.city)]['state'] = venue.state
+        acc[(venue.state, venue.city)]['venues'].append({
+            "id": venue.id,
+            "name": venue.name,
+            "num_upcoming_shows": show_count
+        })
+        return acc
+
+    def default_data_item_factory():
+        return {
+            "state": None,
+            "city": None,
+            "venues": []
+        }
+
+    return reduce(reducer, data, defaultdict(default_data_item_factory)).values()
+
+
 @app.route('/venues')
 def venues():
-    # TODO: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
-        "city": "San Francisco",
-        "state": "CA",
-        "venues": [{
-            "id": 1,
-            "name": "The Musical Hop",
-            "num_upcoming_shows": 0,
-        }, {
-            "id": 3,
-            "name": "Park Square Live Music & Coffee",
-            "num_upcoming_shows": 1,
-        }]
-    }, {
-        "city": "New York",
-        "state": "NY",
-        "venues": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }]
+    result = db.session.query(Venue, func.count(Show.start_time)) \
+        .options(Load(Venue).load_only("id", "name", "city", "state",)) \
+        .outerjoin(Show, and_(Venue.id == Show.venue_id, Show.start_time > datetime.now().date())) \
+        .group_by(Venue.id).all()
+
+    data = group_by_city_state(result)
+
     return render_template('pages/venues.html', areas=data)
 
 
