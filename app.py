@@ -273,10 +273,8 @@ def create_venue_submission():
     if form.validate():
         venue = create_venue_from_request(request)
         venue_id = None
-        print('here1')
         try:
             db.session.add(venue)
-            print('here')
             db.session.commit()
             venue_id = venue.id
         except Exception:
@@ -306,16 +304,16 @@ def create_venue_from_request(request):
     seeking_talent = len(seeking_talent_str) > 0
 
     return Venue(name=form['name'],
-                  city=form['city'],
-                  state=form['state'],
-                  phone=form['phone'],
-                  genres=",".join(form.getlist('genres')),
-                  facebook_link=form['facebook_link'],
-                  image_link=form['image_link'],
-                  website=form['website'],
-                  seeking_talent=seeking_talent,
-                  seeking_description=form['seeking_description'],
-                  )
+                 city=form['city'],
+                 state=form['state'],
+                 phone=form['phone'],
+                 genres=",".join(form.getlist('genres')),
+                 facebook_link=form['facebook_link'],
+                 image_link=form['image_link'],
+                 website=form['website'],
+                 seeking_talent=seeking_talent,
+                 seeking_description=form['seeking_description'],
+                 )
 
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -333,17 +331,8 @@ def delete_venue(venue_id):
 
 @app.route('/artists')
 def artists():
-    # TODO: replace with real data returned from querying the database
-    data = [{
-        "id": 4,
-        "name": "Guns N Petals",
-    }, {
-        "id": 5,
-        "name": "Matt Quevedo",
-    }, {
-        "id": 6,
-        "name": "The Wild Sax Band",
-    }]
+    artists = Artist.query.options(Load(Artist).load_only('id','name')).all()
+    data = list(map(lambda x: {"id": x.id, "name": x.name}, artists))
     return render_template('pages/artists.html', artists=data)
 
 
@@ -519,10 +508,8 @@ def create_artist_submission():
     if form.validate():
         artist = create_artist_from_request(request)
         artist_id = None
-        print('here1')
         try:
             db.session.add(artist)
-            print('here')
             db.session.commit()
             artist_id = artist.id
         except Exception:
