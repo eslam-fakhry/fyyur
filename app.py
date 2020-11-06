@@ -15,7 +15,7 @@ from flask import Flask, render_template, request, Response, flash, redirect, ur
 from flask_moment import Moment
 from sqlalchemy.orm import joinedload, Load
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_
 from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
 import logging
@@ -631,6 +631,38 @@ def create_show_submission():
 
     flash('Show was successfully listed!')
     return redirect(url_for('shows'))
+
+
+@app.route('/shows/search', methods=['GET'])
+def search_shows():
+    search_term = request.args.get('search_term', '')
+
+    result = db.session.query(Show) \
+        .options(joinedload(Show.artist).load_only('name', 'image_link')) \
+        .options(joinedload(Show.venue).load_only('name')) \
+        .filter(or_(Artist.name.ilike("%{}%".format(search_term)),
+                    Venue.name.ilike("%{}%".format(search_term)))) \
+        .all()
+
+    print('result', result)
+
+    def mapper(show):
+
+        return {
+            "artist_id": show.artist_id,
+            "artist_name": show.artist.name,
+            "artist_image_link": show.artist.image_link,
+            "venue_id": show.venue_id,
+            "venue_name": show.venue.name,
+            'start_time': str(show.start_time),
+        }
+
+    results = {
+        "count": len(result),
+        "data": list(map(mapper, result))
+    }
+
+    return render_template('pages/show.html', results=results, search_term=search_term)
 
 
 @app.errorhandler(404)
