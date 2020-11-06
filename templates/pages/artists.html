@@ -1,16 +1,25 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Fyyur | Artists{% endblock %}
 {% block content %}
-<ul class="items">
-	{% for artist in artists %}
-	<li>
-		<a href="/artists/{{ artist.id }}">
-			<i class="fas fa-users"></i>
-			<div class="item">
-				<h5>{{ artist.name }}</h5>
-			</div>
-		</a>
-	</li>
-	{% endfor %}
-</ul>
+
+{% if not artists %}
+	<h1>Sorry ...</h1>
+	<p>There're no artists yet!</p>
+	<p><a href="{{url_for('create_artist_form')}}">Create New Artist</a></p>
+{% endif %}
+
+{% if artists %}
+	<ul class="items">
+		{% for artist in artists %}
+		<li>
+			<a href="/artists/{{ artist.id }}">
+				<i class="fas fa-users"></i>
+				<div class="item">
+					<h5>{{ artist.name }}</h5>
+				</div>
+			</a>
+		</li>
+		{% endfor %}
+	</ul>
+{% endif %}
 {% endblock %}
