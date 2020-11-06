@@ -419,6 +419,11 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
     old_artist = Artist.query.get_or_404(artist_id)
 
+    artist_data = {
+        "id": artist_id,
+        "name": request.form['name'],
+    }
+
     form = ArtistForm(request.form)
     error = False
     if not form.validate():
@@ -426,7 +431,7 @@ def edit_artist_submission(artist_id):
             flash("Your session is expired. please try again")
 
         flash("Oops!, input data not valid. please check your input!")
-        return render_template('forms/edit_artist.html', form=form)
+        return render_template('forms/edit_artist.html', form=form, artist=artist_data)
 
     artist_id = None
     artist = populate_artist_from_request(old_artist, request)
@@ -446,12 +451,11 @@ def edit_artist_submission(artist_id):
     finally:
         db.session.close()
     if error:
-        return render_template('forms/edit_artist.html', form=form)
+        return render_template('forms/edit_artist.html', form=form, artist=artist_data)
     else:
         flash('Artist ' + request.form['name'] +
-                ' was successfully updated!')
+              ' was successfully updated!')
         return redirect(url_for('show_artist', artist_id=artist_id))
-
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
@@ -474,14 +478,19 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
     old_venue = Venue.query.get_or_404(venue_id)
     form = VenueForm(request.form)
+    venue_dict = {
+        "id": venue_id,
+        'name': request.form.get('name', '')
+    }
     error = False
     if not form.validate():
         if form.csrf_token.errors:
             flash("Your session is expired. please try again")
 
         flash("Oops!, input data not valid. please check your input!")
-        return render_template('forms/edit_venue.html', form=form)
+        return render_template('forms/edit_venue.html', form=form, venue=venue_dict)
 
+    print('here')
     venue = populate_venue_from_request(old_venue, request)
     venue_id = None
     try:
@@ -500,10 +509,10 @@ def edit_venue_submission(venue_id):
     finally:
         db.session.close()
     if error:
-        return render_template('forms/edit_venue.html', form=form)
+        return render_template('forms/edit_venue.html', form=form, venue=venue_dict)
     else:
         flash('Venue ' + request.form['name'] +
-                ' was successfully updated!')
+              ' was successfully updated!')
         return redirect(url_for('show_venue', venue_id=venue_id))
 
 
