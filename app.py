@@ -470,7 +470,7 @@ def edit_venue(venue_id):
     }
 
     # populate form with VenueForm
-    form = VenueForm(obj)
+    form = VenueForm(obj=venue_obj)
     form.genres.data = venue_obj.genres.split(',')
 
     return render_template('forms/edit_venue.html', form=form, venue=venue)
