@@ -300,21 +300,26 @@ def create_venue_submission():
 
 
 def create_venue_from_request(request):
+    return populate_artist_from_request(Venue(), request)
+
+
+def populate_venue_from_request(venue, request):
     form = request.form
     seeking_talent_str = form.get('seeking_talent', '')
     seeking_talent = len(seeking_talent_str) > 0
 
-    return Venue(name=form['name'],
-                 city=form['city'],
-                 state=form['state'],
-                 phone=form['phone'],
-                 genres=",".join(form.getlist('genres')),
-                 facebook_link=form['facebook_link'],
-                 image_link=form['image_link'],
-                 website=form['website'],
-                 seeking_talent=seeking_talent,
-                 seeking_description=form['seeking_description'],
-                 )
+    venue.name = form['name']
+    venue.city = form['city']
+    venue.state = form['state']
+    venue.phone = form['phone']
+    venue.genres = ",".join(form.getlist('genres'))
+    venue.facebook_link = form['facebook_link']
+    venue.image_link = form['image_link']
+    venue.website = form['website']
+    venue.seeking_talent = seeking_talent
+    venue.seeking_description = form['seeking_description']
+
+    return venue
 
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -454,10 +459,35 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-    # TODO: take values from the form submitted, and update existing
-    # artist record with ID <artist_id> using the new attributes
+    old_artist = Artist.query.get_or_404(artist_id)
 
-    return redirect(url_for('show_artist', artist_id=artist_id))
+    form = ArtistForm(request.form)
+    error = False
+    if form.validate():
+        artist_id = None
+        artist = populate_artist_from_request(old_artist, request)
+        try:
+            db.session.commit()
+            artist_id = artist.id
+        except Exception:
+            db.session.rollback()
+            print(sys.exc_info())
+            error = True
+        finally:
+            db.session.close()
+        if error:
+            flash("Oops!, Something went wrong!")
+            return render_template('forms/edit_artist.html', form=form)
+        else:
+            flash('Artist ' + request.form['name'] +
+                  ' was successfully updated!')
+            return redirect(url_for('show_artist', artist_id=artist_id))
+
+    if form.csrf_token.errors:
+        flash("Your session is expired. please try again")
+
+    flash("Oops!, input data not valid. please check your input!")
+    return render_template('forms/edit_artist.html', form=form)
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
@@ -478,9 +508,34 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-    # TODO: take values from the form submitted, and update existing
-    # venue record with ID <venue_id> using the new attributes
-    return redirect(url_for('show_venue', venue_id=venue_id))
+    old_venue = Venue.query.get_or_404(venue_id)
+    form = VenueForm(request.form)
+    error = False
+    if form.validate():
+        venue = populate_venue_from_request(old_venue, request)
+        venue_id = None
+        try:
+            db.session.commit()
+            venue_id = venue.id
+        except Exception:
+            db.session.rollback()
+            print(sys.exc_info())
+            error = True
+        finally:
+            db.session.close()
+        if error:
+            flash("Oops!, Something went wrong!")
+            return render_template('forms/edit_venue.html', form=form)
+        else:
+            flash('Venue ' + request.form['name'] +
+                  ' was successfully updated!')
+            return redirect(url_for('show_venue', venue_id=venue_id))
+
+    if form.csrf_token.errors:
+        flash("Your session is expired. please try again")
+
+    flash("Oops!, input data not valid. please check your input!")
+    return render_template('forms/edit_venue.html', form=form)
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -526,21 +581,26 @@ def create_artist_submission():
 
 
 def create_artist_from_request(request):
+    return populate_artist_from_request(Artist(), request)
+
+
+def populate_artist_from_request(artist, request):
     form = request.form
     seeking_venue_str = form.get('seeking_venue', '')
     seeking_venue = len(seeking_venue_str) > 0
 
-    return Artist(name=form['name'],
-                  city=form['city'],
-                  state=form['state'],
-                  phone=form['phone'],
-                  genres=",".join(form.getlist('genres')),
-                  facebook_link=form['facebook_link'],
-                  image_link=form['image_link'],
-                  website=form['website'],
-                  seeking_venue=seeking_venue,
-                  seeking_description=form['seeking_description'],
-                  )
+    artist.name = form['name']
+    artist.city = form['city']
+    artist.state = form['state']
+    artist.phone = form['phone']
+    artist.genres = ",".join(form.getlist('genres'))
+    artist.facebook_link = form['facebook_link']
+    artist.image_link = form['image_link']
+    artist.website = form['website']
+    artist.seeking_venue = seeking_venue
+    artist.seeking_description = form['seeking_description']
+
+    return artist
 
 
 #  Shows
