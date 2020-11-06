@@ -300,7 +300,7 @@ def create_venue_submission():
 
 
 def create_venue_from_request(request):
-    return populate_artist_from_request(Venue(), request)
+    return populate_venue_from_request(Venue(), request)
 
 
 def populate_venue_from_request(venue, request):
@@ -311,6 +311,7 @@ def populate_venue_from_request(venue, request):
     venue.name = form['name']
     venue.city = form['city']
     venue.state = form['state']
+    venue.address = form['address']
     venue.phone = form['phone']
     venue.genres = ",".join(form.getlist('genres'))
     venue.facebook_link = form['facebook_link']
