@@ -17,6 +17,10 @@ source env/bin/activate
 ```
 pip install -r requirements.txt
 ```
+3. **Create database:**
+```
+createdb fyyur_db -U postgres
+```
 
 3. **Run migrations**
 ```
