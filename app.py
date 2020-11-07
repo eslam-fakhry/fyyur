@@ -55,6 +55,8 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.Text())
+    created_at = db.Column(db.DateTime(), nullable=False,
+                           server_default=func.now())
 
     # Add many-to-many relationship with Artist through Show model
     artists = db.relationship(
@@ -78,6 +80,8 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.Text())
+    created_at = db.Column(db.DateTime(), nullable=False,
+                           server_default=func.now())
 
     shows = db.relationship('Show', backref="artist", lazy=True)
 
@@ -118,7 +122,31 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-    return render_template('pages/home.html')
+    artists_result = db.session.query(Artist) \
+        .options(Load(Artist).load_only('name', "created_at")) \
+        .order_by(Artist.created_at.desc()).limit(10).all()
+
+    venues_result = db.session.query(Venue) \
+        .options(Load(Venue).load_only('name', "created_at")) \
+        .order_by(Venue.created_at.desc()).limit(10).all()
+
+    def mapper_factory(type):
+        def mapper(model):
+            return {
+                "type": type,
+                "id": model.id,
+                "name": model.name,
+                "created_at": model.created_at
+            }
+        return mapper
+
+    artists = list(map(mapper_factory('artist'), artists_result))
+    venues = list(map(mapper_factory('venue'), venues_result))
+
+    all_models = venues + artists
+    latest = sorted(all_models, key=lambda x: x['id'], reverse=True)[:10]
+
+    return render_template('pages/home.html', latest=latest)
 
 
 #  Venues
