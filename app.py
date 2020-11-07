@@ -12,7 +12,7 @@ from utils import is_past_show
 
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for
 from flask_moment import Moment
 from sqlalchemy.orm import joinedload, Load
 from flask_sqlalchemy import SQLAlchemy
@@ -21,7 +21,6 @@ from flask_migrate import Migrate
 from flask_debugtoolbar import DebugToolbarExtension
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
 from forms import *
 #----------------------------------------------------------------------------#
 # App Config.
@@ -518,7 +517,6 @@ def edit_venue_submission(venue_id):
         flash("Oops!, input data not valid. please check your input!")
         return render_template('forms/edit_venue.html', form=form, venue=venue_dict)
 
-    print('here')
     venue = populate_venue_from_request(old_venue, request)
     venue_id = None
     try:
@@ -699,8 +697,6 @@ def search_shows():
         .filter(or_(Artist.name.ilike("%{}%".format(search_term)),
                     Venue.name.ilike("%{}%".format(search_term)))) \
         .all()
-
-    print('result', result)
 
     def mapper(show):
 
