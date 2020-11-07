@@ -82,6 +82,8 @@ class Artist(db.Model):
     created_at = db.Column(db.DateTime(), nullable=False,
                            server_default=func.now())
 
+    unavailabilities = db.relationship(
+        "Unavailability", backref='artist', lazy=True)
     shows = db.relationship('Show', backref="artist", lazy=True)
 
 
@@ -97,6 +99,20 @@ class Show(db.Model):
                          nullable=False)
     start_time = db.Column(db.DateTime,
                            nullable=False)
+
+
+class Unavailability(db.Model):
+    __tablename__ = 'unavailabilities'
+
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime,
+                           nullable=False)
+    end_time = db.Column(db.DateTime,
+                         nullable=False)
+
+    artist_id = db.Column(db.Integer,
+                          db.ForeignKey('artists.id'),
+                          nullable=False)
 
 
 #----------------------------------------------------------------------------#
