@@ -8,6 +8,7 @@ from itertools import filterfalse
 import json
 import sys
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.elements import between
 from utils import is_past_show
 
 import dateutil.parser
@@ -693,6 +694,15 @@ def create_show_submission():
     venue = Venue.query.get(request.form.get('venue_id'))
     if venue is None:
         form.venue_id.errors.append("Id is not associated with any venue")
+        return render_template('forms/new_show.html', form=form)
+
+    isUnavailable = len(Unavailability.query
+                        .filter(Unavailability.id == artist.id,
+                                between(request.form.get('start_time'), Unavailability.start_time, Unavailability.end_time))
+                        .all())
+
+    if isUnavailable:
+        form.start_time.errors.append("The artist is unavailable at that time")
         return render_template('forms/new_show.html', form=form)
 
     show = Show(artist_id=request.form.get('artist_id'),
