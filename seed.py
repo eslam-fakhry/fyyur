@@ -10,6 +10,7 @@ def main():
     with open('seed_data.json') as json_file:
         data = json.load(json_file)
         # artists = map(artist_mapper, data['artists'])
+        print("Seeding...")
         try:
             for artist in data['artists']:
                 past_days = random.randrange(0, 20)
@@ -32,18 +33,18 @@ def main():
                 past_days = random.randrange(0, 20)
                 created_at = datetime.now() - timedelta(days=past_days)
                 venue_obj = Venue(name=venue['name'],
-                                genres=venue["genres"],
-                                city=venue["city"],
-                                state=venue['state'],
-                                address=venue['address'],
-                                phone=venue['phone'],
-                                website=venue['website'],
-                                facebook_link=venue['facebook_link'],
-                                seeking_talent=venue['seeking_talent'],
-                                seeking_description=venue['seeking_description'],
-                                image_link=venue['image_link'],
-                                created_at=created_at,
-                                )
+                                  genres=venue["genres"],
+                                  city=venue["city"],
+                                  state=venue['state'],
+                                  address=venue['address'],
+                                  phone=venue['phone'],
+                                  website=venue['website'],
+                                  facebook_link=venue['facebook_link'],
+                                  seeking_talent=venue['seeking_talent'],
+                                  seeking_description=venue['seeking_description'],
+                                  image_link=venue['image_link'],
+                                  created_at=created_at,
+                                  )
                 db.session.add(venue_obj)
             for i in range(10):
                 past_days = random.randrange(-3, 3)
@@ -61,18 +62,21 @@ def main():
 
                 start_time = datetime.now() + timedelta(days=past_days)
                 end_time = start_time + timedelta(days=duration)
-                
+
                 show_obj = Show(artist_id=random.randrange(1, 20),
                                 venue_id=random.randrange(1, 20),
                                 start_time=start_time,
                                 )
                 db.session.add(show_obj)
             db.session.commit()
+            print("Done seeding.")
         except:
             db.session.rollback()
-            print(sys.exc_info()    )
+            print(sys.exc_info())
+            print("Error seeding.")
         finally:
-           db.session.close()
+            db.session.close()
+
 
 if __name__ == "__main__":
     main()
