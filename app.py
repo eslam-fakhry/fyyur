@@ -19,7 +19,6 @@ from sqlalchemy.orm import joinedload, Load
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, func, or_
 from flask_migrate import Migrate
-from flask_debugtoolbar import DebugToolbarExtension
 import logging
 from logging import Formatter, FileHandler
 from forms import *
@@ -30,10 +29,8 @@ from forms import *
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
-app.debug = True
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-toolbar = DebugToolbarExtension(app)
 
 #----------------------------------------------------------------------------#
 # Models.
