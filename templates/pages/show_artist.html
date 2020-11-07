@@ -71,6 +71,29 @@
 		{% endfor %}
 	</div>
 </section>
+<section>
+	<h2 class="monospace">Unavailable at</h2>
+	<ul class="items">
+		{%for item in artist.unavailabilities %}
+		<li >
+			<i class="fas fa-bell-slash"></i>
+			From 
+			<span class="badge">{{ item.start_time|datetime('full') }}</span>
+			to
+			<span class="badge">{{ item.end_time|datetime('full') }}</span>
 
+			<button id="delete-unavailability" data-artistid="{{ artist.id }}" data-id="{{ item.id }}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+			
+
+		</li>
+		{% endfor %}
+		<h3>
+			<a href="{{ url_for('create_unavailabilities',artist_id=artist.id) }}" class="btn btn-primary m-4">Create New Availability</a>
+		</h3>
+	</ul>
+</section>
 {% endblock %}
 
+{% block scripts %}
+  <script type="text/javascript" src="/static/js/delete-unavailability.js" defer></script>
+{% endblock %}

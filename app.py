@@ -403,20 +403,32 @@ def show_artist(artist_id):
     artist = Artist.query \
         .options(joinedload(Artist.shows)) \
         .options(joinedload(Artist.venues).load_only("id", "name", "image_link")) \
-        .get(artist_id)
+        .get_or_404(artist_id)
+
+    unavailabilities = Unavailability.query.filter(
+        Unavailability.artist_id == artist_id, Unavailability.end_time > datetime.today())
 
     past_shows = list(filter(is_past_show, artist.shows))
     upcoming_shows = list(filterfalse(is_past_show, artist.shows))
 
-    def mapper(show):
+    def show_mapper(show):
         return {
             "venue_id": show.venue.id,
             "venue_name": show.venue.name,
             "venue_image_link": show.venue.image_link,
             "start_time": str(show.start_time)
         }
-    past_shows_dict = map(mapper, past_shows)
-    upcoming_shows_dict = map(mapper, upcoming_shows)
+
+    def unavailability_mapper(unavailability):
+        return {
+            "id": unavailability.id,
+            "start_time": str(unavailability.start_time),
+            "end_time": str(unavailability.end_time),
+        }
+
+    past_shows_dict = map(show_mapper, past_shows)
+    upcoming_shows_dict = map(show_mapper, upcoming_shows)
+    unavailabilities = map(unavailability_mapper, unavailabilities)
 
     data = {
         "id": artist.id,
@@ -434,6 +446,7 @@ def show_artist(artist_id):
         "upcoming_shows": upcoming_shows_dict,
         "past_shows_count": len(past_shows),
         "upcoming_shows_count": len(upcoming_shows),
+        "unavailabilities": unavailabilities
     }
 
     return render_template('pages/show_artist.html', artist=data)
@@ -777,6 +790,30 @@ def create_unavailability_submission(artist_id):
 
     flash('unavailability was successfully added!')
     return redirect(url_for('show_artist', artist_id=artist_id))
+
+
+@app.route('/unavailabilities/<unavailability_id>', methods=['DELETE'])
+def delete_unavailability(unavailability_id):
+    unavailability = Unavailability.query.get(unavailability_id)
+
+    if unavailability is None:
+        flash('unavailability not found')
+        return redirect(url_for('show_artist'))
+
+    try:
+        db.session.delete(unavailability)
+        db.session.commit()
+        flash('unavailability was successfully deleted!')
+    except Exception:
+        db.session.rollback()
+        print(sys.exc_info())
+        flash("Oops!, Something went wrong!")
+    finally:
+        db.session.close()
+
+    return redirect(url_for('show_artist'))
+
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('errors/404.html'), 404
