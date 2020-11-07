@@ -631,15 +631,13 @@ def create_show_submission():
     # check if artist exists
     artist = Artist.query.get(request.form.get('artist_id'))
     if artist is None:
-        flash("Artist ID: {} is not associated with any artist".format(
-            request.form['artist_id']))
+        form.venue_id.errors.append("Id is not associated with any artist")
         return render_template('forms/new_show.html', form=form)
 
     # check if venue exists
     venue = Venue.query.get(request.form.get('venue_id'))
     if venue is None:
-        flash("Venue ID: {} is not associated with any venue".format(
-            request.form['venue_id']))
+        form.venue_id.errors.append("Id is not associated with any venue")
         return render_template('forms/new_show.html', form=form)
 
     show = Show(artist_id=request.form.get('artist_id'),
