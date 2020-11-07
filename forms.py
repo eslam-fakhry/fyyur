@@ -1,7 +1,8 @@
 from datetime import datetime
+import re
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField 
-from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField
+from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 from wtforms.widgets.core import CheckboxInput, TextArea
 
 
@@ -88,6 +89,15 @@ class VenueForm(Form):
     phone = StringField(
         'phone'
     )
+
+    def validate_phone(form, field):
+        value = field.data
+        print(value)
+
+        if not re.search("^[0-9-]*$", value):
+            msg = u"Invalid phone number."
+            raise ValidationError(msg)
+
     image_link = StringField(
         'image_link'
     )
@@ -131,6 +141,7 @@ class VenueForm(Form):
     seeking_description = StringField(
         'seeking_description', widget=TextArea()
     )
+
 
 class ArtistForm(Form):
     name = StringField(
@@ -196,9 +207,17 @@ class ArtistForm(Form):
         ]
     )
     phone = StringField(
-        # TODO implement validation logic for state
         'phone'
     )
+
+    def validate_phone(form, field):
+        value = field.data
+        print(value)
+
+        if not re.search("^[0-9-]*$", value):
+            msg = u"Invalid phone number."
+            raise ValidationError(msg)
+
     image_link = StringField(
         'image_link'
     )
@@ -228,7 +247,6 @@ class ArtistForm(Form):
         ]
     )
     facebook_link = StringField(
-        # TODO implement enum restriction
         'facebook_link', validators=[URL()]
     )
     website = StringField(
@@ -243,5 +261,3 @@ class ArtistForm(Form):
     seeking_description = StringField(
         'seeking_description', widget=TextArea()
     )
-
-# TODO IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM

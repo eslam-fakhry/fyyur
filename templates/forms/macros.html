@@ -1,0 +1,14 @@
+{% macro render_errors(field) %}
+  {% if field.errors %}
+  <div class="has-error">
+    {% for error in field.errors %}
+      <span  class="help-block">{{ error }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_field(field) %}
+  {{ field(**kwargs)|safe }}
+  {{ render_errors(field)}}
+{% endmacro %}
