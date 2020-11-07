@@ -733,6 +733,50 @@ def search_shows():
     return render_template('pages/show.html', results=results, search_term=search_term)
 
 
+#  Unavailability
+#  ----------------------------------------------------------------
+@app.route('/artists/<int:artist_id>/unavailabilities/create')
+def create_unavailabilities(artist_id):
+    artist = Artist.query.get_or_404(artist_id)
+
+    form = UnavailabilityForm()
+    form.artist_id.data = artist_id
+
+    return render_template('forms/new_unavailability.html', form=form)
+
+
+@app.route('/artists/<int:artist_id>/unavailabilities/create', methods=['POST'])
+def create_unavailability_submission(artist_id):
+    form = UnavailabilityForm(request.form)
+    error = False
+    print(artist_id, request.form.get('artist_id'))
+    if(not form.validate()):
+        flash("Oops!, input data not valid. please check your input!")
+        return render_template('forms/new_unavailability.html', form=form)
+
+    # check if artist exists
+    artist = Artist.query.get_or_404(request.form.get('artist_id'))
+
+    unavailability = Unavailability(artist_id=request.form.get('artist_id'),
+                                    start_time=request.form.get('start_time'),
+                                    end_time=request.form.get('end_time'))
+
+    try:
+        db.session.add(unavailability)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        print(sys.exc_info())
+        error = True
+    finally:
+        db.session.close()
+
+    if error:
+        flash("An error occurred. unavailability could not be listed.")
+        return render_template('forms/new_unavailability.html', form=form)
+
+    flash('unavailability was successfully added!')
+    return redirect(url_for('show_artist', artist_id=artist_id))
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('errors/404.html'), 404

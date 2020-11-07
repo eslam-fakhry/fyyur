@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField
+from wtforms.fields.simple import HiddenField
 from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 from wtforms.widgets.core import CheckboxInput, TextArea
 
@@ -259,3 +260,32 @@ class ArtistForm(Form):
     seeking_description = StringField(
         'seeking_description', widget=TextArea()
     )
+
+
+class UnavailabilityForm(Form):
+    artist_id = HiddenField(
+        'artist_id'
+    )
+    start_time = DateTimeField(
+        'start_time',
+        validators=[DataRequired()],
+        default=datetime.today()
+    )
+
+    end_time = DateTimeField(
+        'end_time',
+        validators=[DataRequired()],
+        default=datetime.today() + timedelta(days=1)
+    )
+    def validate_end_time(form, field):
+        if field.data < datetime.today():
+            msg = u"End time must be in the future"
+            raise ValidationError(msg)
+        if field.data < form.start_time.data:
+            msg = u"End time must be later than start time"
+            raise ValidationError(msg)
+
+    def validate_start_time(form, field):
+        if field.data < datetime.today():
+            msg = u"Start time must be in the future"
+            raise ValidationError(msg)

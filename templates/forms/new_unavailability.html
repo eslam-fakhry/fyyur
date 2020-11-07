@@ -1,0 +1,22 @@
+{% extends 'layouts/main.html' %}
+{% import 'forms/macros.html' as macros %} 
+{% block title %}New Unavailability{% endblock %}
+{% block content %}
+  <div class="form-wrapper">
+    <form method="post" class="form">
+    {{ form.csrf_token }}
+      <h3 class="form-heading">Add a new Unavailability</h3>
+        {{ macros.render_field(form.artist_id) }}
+      </>
+      <div class="form-group">
+          <label for="start_time">Start Time</label>
+          {{ macros.render_field(form.start_time, class_ = 'form-control', placeholder='YYYY-MM-DD HH:MM', autofocus = true) }}
+      </div>
+      <div class="form-group">
+          <label for="end_time">End Time</label>
+          {{ macros.render_field(form.end_time, class_ = 'form-control', placeholder='YYYY-MM-DD HH:MM', autofocus = true) }}
+      </div>
+      <input type="submit" value="Add Unavailability" class="btn btn-primary btn-lg btn-block">
+    </form>
+  </div>
+{% endblock %}
